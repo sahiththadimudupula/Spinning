@@ -2,12 +2,19 @@ from pathlib import Path
 
 APP_TITLE = "Vapi Spinning Manpower Engine"
 
-WORKBOOK_CANDIDATES = [
+INPUT_WORKBOOK_CANDIDATES = [
     Path("input/Spinning.xlsx"),
     Path("Spinning.xlsx"),
     Path(__file__).resolve().parents[1] / "input" / "Spinning.xlsx",
     Path("/mnt/data/Spinning.xlsx"),
 ]
+
+OUTPUT_WORKBOOK_CANDIDATES = [
+    Path("output/Spinning_working.xlsx"),
+    Path(__file__).resolve().parents[1] / "output" / "Spinning_working.xlsx",
+]
+
+DEFAULT_OUTPUT_WORKBOOK_PATH = OUTPUT_WORKBOOK_CANDIDATES[0]
 
 MASTER_SHEET_NAME = "Spinning"
 TFO_SHEET_NAME = "TFO"

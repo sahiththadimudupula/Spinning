@@ -1,13 +1,20 @@
-Vapi Spinning Manpower Engine
+# Vapi Spinning Manpower Engine
 
-Run locally:
-1. pip install -r requirements.txt
-2. streamlit run app.py
+## File behavior
 
-Tabs included:
-- Main Manpower Plan
-- TFO Planning
-- Final Master Sheet
+- `input/Spinning.xlsx` → original master file
+- `output/Spinning_working.xlsx` → working saved file
 
-Freeze Changes saves the current app state back into input/Spinning.xlsx.
-Download Full Excel in Final Master Sheet gives the current workbook snapshot.
+## Load behavior
+
+- If `output/Spinning_working.xlsx` exists, the app loads it.
+- Otherwise, the app loads `input/Spinning.xlsx`.
+
+## Save behavior
+
+- **Freeze Changes** overwrites only `output/Spinning_working.xlsx`.
+- `input/Spinning.xlsx` remains untouched.
+
+## Reset behavior
+
+- **Reset from Input** deletes the working file and reloads the original input workbook.

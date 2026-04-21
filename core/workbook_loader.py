@@ -6,22 +6,37 @@ import openpyxl
 import pandas as pd
 
 from config.constants import (
+    INPUT_WORKBOOK_CANDIDATES,
     MASTER_COLUMNS,
     MASTER_SHEET_NAME,
+    OUTPUT_WORKBOOK_CANDIDATES,
     TFO_INPUT_COLUMNS,
     TFO_INPUT_END_ROW,
     TFO_INPUT_START_ROW,
     TFO_SHEET_NAME,
-    WORKBOOK_CANDIDATES,
 )
 from core.dataframe_utils import clean_text, coerce_master_dataframe, safe_float
 
 
-def resolve_workbook_path() -> Path:
-    for candidate_path in WORKBOOK_CANDIDATES:
+def get_input_workbook_path() -> Path:
+    for candidate_path in INPUT_WORKBOOK_CANDIDATES:
         if candidate_path.exists():
             return candidate_path
-    raise FileNotFoundError("Spinning.xlsx not found in input folder.")
+    raise FileNotFoundError("input/Spinning.xlsx not found.")
+
+
+def get_output_workbook_path() -> Path:
+    for candidate_path in OUTPUT_WORKBOOK_CANDIDATES:
+        if candidate_path.exists():
+            return candidate_path
+    return OUTPUT_WORKBOOK_CANDIDATES[0]
+
+
+def resolve_workbook_path() -> Path:
+    output_workbook_path = get_output_workbook_path()
+    if output_workbook_path.exists():
+        return output_workbook_path
+    return get_input_workbook_path()
 
 
 def load_master_dataframe(workbook_path: Path) -> tuple[pd.DataFrame, list[str]]:

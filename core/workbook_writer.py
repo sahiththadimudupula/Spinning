@@ -16,8 +16,6 @@ from config.constants import (
 from core.dataframe_utils import clean_text, safe_float
 
 
-
-
 def build_workbook_bytes(
     workbook_path: Path,
     master_df: pd.DataFrame,
@@ -47,13 +45,14 @@ def build_workbook_bytes(
 
 
 def write_state_to_workbook(
-    workbook_path: Path,
+    source_workbook_path: Path,
+    output_workbook_path: Path,
     master_df: pd.DataFrame,
     tfo_input_df: pd.DataFrame,
     tfo_production_df: pd.DataFrame,
     tfo_manpower_df: pd.DataFrame,
-) -> None:
-    workbook = openpyxl.load_workbook(workbook_path)
+) -> Path:
+    workbook = openpyxl.load_workbook(source_workbook_path)
     master_sheet = workbook[MASTER_SHEET_NAME]
     tfo_sheet = workbook[TFO_SHEET_NAME]
 
@@ -68,7 +67,9 @@ def write_state_to_workbook(
         tfo_manpower_df=tfo_manpower_df,
     )
 
-    workbook.save(workbook_path)
+    output_workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(output_workbook_path)
+    return output_workbook_path
 
 
 def write_master_sheet(master_sheet, master_df: pd.DataFrame) -> None:
@@ -114,9 +115,9 @@ def write_tfo_production_section(tfo_sheet, tfo_input_df: pd.DataFrame, tfo_prod
         tfo_sheet[f"S{excel_row}"] = production_row.get("kgs/drum/day Formula")
         tfo_sheet[f"T{excel_row}"] = safe_float(production_row.get("kgs/drum/day"))
         tfo_sheet[f"U{excel_row}"] = production_row.get("No. of Drums Formula")
-        tfo_sheet[f"V{excel_row}"] = safe_float(production_row.get("No. of Drums"))
-        tfo_sheet[f"W{excel_row}"] = production_row.get("No. of Machines Formula")
-        tfo_sheet[f"X{excel_row}"] = safe_float(production_row.get("No. of Machines"))
+        tfo_sheet[f"V{excel_row}"] = safe_float(production_row.get("No. of Drums (A/W) Reqd."))
+        tfo_sheet[f"W{excel_row}"] = production_row.get("Assembly Winding Reqd./ Shift Formula")
+        tfo_sheet[f"X{excel_row}"] = safe_float(production_row.get("Assembly Winding Reqd./ Shift"))
 
 
 def write_tfo_manpower_section(tfo_sheet, tfo_manpower_df: pd.DataFrame) -> None:

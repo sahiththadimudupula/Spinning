@@ -20,8 +20,20 @@ from config.constants import (
 from core.workbook_loader import load_master_dataframe, load_tfo_input_dataframe, resolve_workbook_path
 
 
-def initialize_session_state() -> None:
-    if WORKBOOK_PATH_KEY in st.session_state:
+STATEFUL_KEYS = [
+    WORKBOOK_PATH_KEY,
+    MASTER_SOURCE_KEY,
+    MASTER_DATA_KEY,
+    TFO_INPUT_DATA_KEY,
+    TFO_PRODUCTION_DATA_KEY,
+    TFO_MANPOWER_DATA_KEY,
+    SECTION_ORDER_KEY,
+    SUCCESS_MESSAGE_KEY,
+]
+
+
+def initialize_session_state(force_reload: bool = False) -> None:
+    if WORKBOOK_PATH_KEY in st.session_state and not force_reload:
         return
 
     workbook_path = resolve_workbook_path()
@@ -41,14 +53,7 @@ def initialize_session_state() -> None:
     st.session_state[SUCCESS_MESSAGE_KEY] = ""
 
 
-def rebuild_tfo_linked_data() -> None:
-    tfo_input_df = st.session_state[TFO_INPUT_DATA_KEY]
-    master_df = st.session_state[MASTER_DATA_KEY]
-
-    tfo_production_df = calculate_tfo_production_dataframe(tfo_input_df)
-    tfo_manpower_df = calculate_tfo_manpower_dataframe(tfo_production_df)
-    refreshed_master_df = apply_tfo_to_master(master_df, tfo_manpower_df)
-
-    st.session_state[TFO_PRODUCTION_DATA_KEY] = tfo_production_df
-    st.session_state[TFO_MANPOWER_DATA_KEY] = tfo_manpower_df
-    st.session_state[MASTER_DATA_KEY] = refreshed_master_df
+def clear_workbook_session_state() -> None:
+    for session_key in STATEFUL_KEYS:
+        if session_key in st.session_state:
+            del st.session_state[session_key]
