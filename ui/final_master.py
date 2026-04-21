@@ -4,13 +4,25 @@ import pandas as pd
 import streamlit as st
 
 from config.constants import MASTER_COLUMNS
+from core.dataframe_utils import append_total_row
+from ui.components import render_metric_cards
 
 
 
 def render_final_master_tab(master_df: pd.DataFrame, workbook_bytes: bytes) -> None:
     st.markdown('<div class="panel-title">Final Master Sheet</div>', unsafe_allow_html=True)
 
-    display_df = master_df[MASTER_COLUMNS].copy()
+    cards = [
+        ("Section", master_df["Section"].nunique(), "Number of visible sections"),
+        (
+            "Sum of BE_Final_Manpower",
+            round(pd.to_numeric(master_df["BE_Final_Manpower"], errors="coerce").fillna(0.0).sum(), 2),
+            "Current final manpower total",
+        ),
+    ]
+    render_metric_cards(cards)
+
+    display_df = append_total_row(master_df[MASTER_COLUMNS].copy(), label_column="Section")
 
     st.download_button(
         label="Download Full Excel",

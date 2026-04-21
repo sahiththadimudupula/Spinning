@@ -24,9 +24,9 @@ def render_metric_cards(cards: list[tuple[str, object, str]]) -> None:
             st.markdown(
                 f"""
                 <div class="metric-card">
-                    <div class="metric-label">{html.escape(label_text)}</div>
+                    <div class="metric-label">{html.escape(str(label_text))}</div>
                     <div class="metric-value">{html.escape(format_number(value))}</div>
-                    <div class="metric-note">{html.escape(note_text)}</div>
+                    <div class="metric-note">{html.escape(str(note_text))}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -57,8 +57,9 @@ def render_formula_hover_table(
             if formula_column:
                 tooltip_text = str(row.get(formula_column, "") or "")
 
-            if isinstance(value, (int, float)) and not isinstance(value, bool):
-                display_value = format_number(value)
+            numeric_value = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+            if pd.notna(numeric_value):
+                display_value = format_number(numeric_value)
             else:
                 display_value = html.escape(str("" if pd.isna(value) else value))
 

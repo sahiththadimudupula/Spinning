@@ -37,8 +37,11 @@ def build_formula_texts(excel_row: int, divisor: float) -> dict[str, str]:
         "Production per Drum/day Formula": f"=((D{excel_row}*60*8*G{excel_row}*2)/(E{excel_row}*36*840*C{excel_row}*2.202))*3",
         "Production Required / Month Kgs Formula": f"=L{excel_row}*30",
         "No. of Drums Required Formula": f"=L{excel_row}/I{excel_row}",
-        "TFO Required / Shift Formula": f"=N{excel_row}/{divisor_text}",
+        "TFO Reqd./ Shift Formula": f"=N{excel_row}/{divisor_text}",
         "kgs/drum/day Formula": f"=(Q{excel_row}*R{excel_row}*8*60*1.09/(C{excel_row}*840*2.202))*3",
+        "No. of Drums (A/W) Reqd. Formula": f"=L{excel_row}/T{excel_row}",
+        "Assembly Winding Reqd./ Shift Formula": f"=V{excel_row}/{int(DEFAULT_MACHINE_DIVISOR)}",
+        "TFO Required / Shift Formula": f"=N{excel_row}/{divisor_text}",
         "No. of Drums Formula": f"=L{excel_row}/T{excel_row}",
         "No. of Machines Formula": f"=V{excel_row}/{int(DEFAULT_MACHINE_DIVISOR)}",
     }
@@ -65,12 +68,7 @@ def calculate_tfo_production_dataframe(tfo_input_df: pd.DataFrame) -> pd.DataFra
             production_per_drum_day = 0.0
 
         production_required_month = production_required_day * 30
-
-        if production_per_drum_day > 0:
-            drums_required = production_required_day / production_per_drum_day
-        else:
-            drums_required = 0.0
-
+        drums_required = production_required_day / production_per_drum_day if production_per_drum_day > 0 else 0.0
         tfo_required_shift = drums_required / divisor if divisor > 0 else 0.0
 
         if count2 > 0 and mpm > 0 and eff_value > 0:
@@ -79,7 +77,7 @@ def calculate_tfo_production_dataframe(tfo_input_df: pd.DataFrame) -> pd.DataFra
             kilograms_per_drum_day = 0.0
 
         no_of_drums = production_required_day / kilograms_per_drum_day if kilograms_per_drum_day > 0 else 0.0
-        no_of_machines = no_of_drums / DEFAULT_MACHINE_DIVISOR if DEFAULT_MACHINE_DIVISOR > 0 else 0.0
+        assembly_winding_required_shift = no_of_drums / DEFAULT_MACHINE_DIVISOR if DEFAULT_MACHINE_DIVISOR > 0 else 0.0
 
         output_row = {
             "Count": clean_text(row.get("Count")),
@@ -93,12 +91,15 @@ def calculate_tfo_production_dataframe(tfo_input_df: pd.DataFrame) -> pd.DataFra
             "Production Required / Month Kgs": round(production_required_month, 2),
             "Production per Drum/day": round(production_per_drum_day, 2),
             "No. of Drums Required": round(drums_required, 2),
+            "TFO Reqd./ Shift": round(tfo_required_shift, 2),
             "TFO Required / Shift": round(tfo_required_shift, 2),
             "mpm": round(mpm, 2),
             "Eff": round(eff_value, 2),
             "kgs/drum/day": round(kilograms_per_drum_day, 2),
+            "No. of Drums (A/W) Reqd.": round(no_of_drums, 2),
             "No. of Drums": round(no_of_drums, 2),
-            "No. of Machines": round(no_of_machines, 2),
+            "Assembly Winding Reqd./ Shift": round(assembly_winding_required_shift, 2),
+            "No. of Machines": round(assembly_winding_required_shift, 2),
             "TFO Divisor": divisor,
             "Machine Divisor": DEFAULT_MACHINE_DIVISOR,
             "__excel_row": excel_row,
@@ -118,9 +119,9 @@ def calculate_tfo_manpower_dataframe(production_df: pd.DataFrame) -> pd.DataFram
         production_df["Count"].apply(normalize_key_text) == normalize_key_text(SPECIAL_TFO_COUNT)
     ].copy()
 
-    special_drums = safe_float(special_df["No. of Drums"].sum())
-    total_drums_non_special = safe_float(non_special_df["No. of Drums"].sum())
-    total_tfo_required_non_special = safe_float(non_special_df["TFO Required / Shift"].sum())
+    special_drums = safe_float(special_df["No. of Drums (A/W) Reqd."].sum())
+    total_drums_non_special = safe_float(non_special_df["No. of Drums (A/W) Reqd."].sum())
+    total_tfo_required_non_special = safe_float(non_special_df["TFO Reqd./ Shift"].sum())
 
     assembly_winding = excel_roundup((((total_drums_non_special / 36) + (special_drums / 36)) * 3), 0)
     jumbo_assembly_winding = excel_round(excel_roundup(special_drums, 0) / 16, 0) * 2

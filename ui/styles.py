@@ -22,16 +22,16 @@ def apply_app_styles() -> None:
 
             .block-container {
                 max-width: 1520px;
-                padding-top: 0.9rem;
+                padding-top: 0.75rem;
                 padding-bottom: 2rem;
             }
 
             .app-title {
                 color: #2563eb;
-                font-size: 1.28rem;
+                font-size: 1.18rem;
                 font-weight: 800;
                 line-height: 1.2;
-                margin-bottom: 0.85rem;
+                margin-bottom: 0.75rem;
             }
 
             .stTabs [data-baseweb="tab-list"] {
@@ -61,7 +61,7 @@ def apply_app_styles() -> None:
                 color: #1e3a8a;
                 font-size: 1.03rem;
                 font-weight: 700;
-                margin-top: 0.1rem;
+                margin-top: 0.05rem;
                 margin-bottom: 0.65rem;
             }
 
@@ -155,6 +155,7 @@ def apply_app_styles() -> None:
                 border: 1px solid #e2e8f0;
                 border-radius: 14px;
                 margin-bottom: 0.9rem;
+                background: #ffffff;
             }
 
             table.formula-table {
@@ -178,10 +179,42 @@ def apply_app_styles() -> None:
                 border-bottom: 1px solid #f1f5f9;
                 white-space: nowrap;
                 color: #0f172a;
+                background: #ffffff;
             }
 
             table.formula-table tbody tr:hover {
                 background: #f8fafc;
+            }
+
+            table.formula-table tbody tr:last-child td {
+                background: #f8fafc;
+                font-weight: 700;
+            }
+
+            div[data-testid="stDataFrame"],
+            div[data-testid="stDataEditor"] {
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                overflow: hidden;
+                background: #ffffff !important;
+                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+            }
+
+            div[data-testid="stDataFrame"] * {
+                color: #0f172a !important;
+            }
+
+            div[data-testid="stDataEditor"] * {
+                color: #000000 !important;
+            }
+
+            div[data-testid="stDataEditor"] input,
+            div[data-testid="stDataEditor"] textarea,
+            div[data-testid="stDataEditor"] [role="gridcell"],
+            div[data-testid="stDataEditor"] [data-testid="stWidgetLabel"] {
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+                background: #ffffff !important;
             }
 
             .freeze-wrap {

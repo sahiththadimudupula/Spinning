@@ -126,12 +126,12 @@ TFO_PRODUCTION_DISPLAY_COLUMNS = [
     "Production Required / Month Kgs",
     "Production per Drum/day",
     "No. of Drums Required",
-    "TFO Required / Shift",
+    "TFO Reqd./ Shift",
     "mpm",
     "Eff",
     "kgs/drum/day",
-    "No. of Drums",
-    "No. of Machines",
+    "No. of Drums (A/W) Reqd.",
+    "Assembly Winding Reqd./ Shift",
 ]
 
 TFO_MANPOWER_DISPLAY_COLUMNS = [

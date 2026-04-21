@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import math
-from typing import Iterable
-
 import pandas as pd
+from typing import Iterable
 
 from config.constants import EDITABLE_NUMERIC_COLUMNS, NUMERIC_COLUMNS, TEXT_COLUMNS
 
@@ -115,3 +113,41 @@ def split_shift_evenly(total_manpower: float) -> tuple[float, float, float, floa
         shift_b += 1
 
     return 0.0, float(shift_a), float(shift_b), float(shift_c)
+
+
+def append_total_row(
+    dataframe: pd.DataFrame,
+    label_column: str | None = None,
+    total_row_key: str | None = None,
+) -> pd.DataFrame:
+    display_df = dataframe.copy()
+    if display_df.empty:
+        return display_df
+
+    numeric_columns: list[str] = []
+    for column_name in display_df.columns:
+        if column_name.startswith("__"):
+            continue
+        numeric_series = pd.to_numeric(display_df[column_name], errors="coerce")
+        if numeric_series.notna().any():
+            numeric_columns.append(column_name)
+
+    if label_column is None:
+        candidate_columns = [column for column in display_df.columns if not column.startswith("__") and column not in numeric_columns]
+        label_column = candidate_columns[0] if candidate_columns else display_df.columns[0]
+
+    total_row: dict[str, object] = {}
+
+    for column_name in display_df.columns:
+        if column_name == label_column:
+            total_row[column_name] = "Total"
+        elif column_name in numeric_columns:
+            total_row[column_name] = round(pd.to_numeric(display_df[column_name], errors="coerce").fillna(0.0).sum(), 2)
+        elif column_name == "__row_key" and total_row_key is not None:
+            total_row[column_name] = total_row_key
+        elif column_name == "__excel_row":
+            total_row[column_name] = "__TOTAL__"
+        else:
+            total_row[column_name] = ""
+
+    return pd.concat([display_df, pd.DataFrame([total_row])], ignore_index=True)
