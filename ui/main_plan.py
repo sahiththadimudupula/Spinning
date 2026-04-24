@@ -4,31 +4,38 @@ import pandas as pd
 import streamlit as st
 
 from calculations.summary_calculations import build_section_summary
-from config.constants import EDITOR_COLUMNS, OPERATOR_TYPE_OPTIONS
+from config.constants import EDITABLE_COLUMNS, EDITOR_COLUMNS, MASTER_COLUMNS, OPERATOR_TYPE_OPTIONS
 from core.dataframe_utils import (
     append_total_row,
+    clean_text,
     coerce_editor_dataframe,
     dataframes_match,
     normalize_key_text,
-    safe_float,
     unique_strings_in_order,
 )
-from ui.components import render_metric_cards
+from ui.components import render_metric_cards, render_static_table
 
 
 COMPACT_COLUMNS = ["Section", "Dept_Machine_Name", "Designation", "BE_Final_Manpower"]
-EDITABLE_COLUMNS_TO_SAVE = [
-    "Operator_Type",
-    "Contractors",
-    "Company_Associate",
-    "BE_Final_Manpower",
-    "General_Shift",
-    "Shift_A",
-    "Shift_B",
-    "Shift_C",
-    "Reliever",
-    "Remarks",
-]
+EDITABLE_COLUMNS_TO_SAVE = EDITABLE_COLUMNS.copy()
+
+
+NUMERIC_CONFIG = {
+    "Sr_No": st.column_config.NumberColumn("Sr_No", format="%.2f", disabled=True),
+    "Machine_Count": st.column_config.NumberColumn("Machine_Count", format="%.2f", disabled=True),
+    "BE_Scientific_Manpower": st.column_config.NumberColumn("BE_Scientific_Manpower", format="%.2f", disabled=True),
+    "Contractors": st.column_config.NumberColumn("Contractors", format="%.2f"),
+    "Company_Associate": st.column_config.NumberColumn("Company_Associate", format="%.2f"),
+    "BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f"),
+    "General_Shift": st.column_config.NumberColumn("General_Shift", format="%.2f"),
+    "Shift_A": st.column_config.NumberColumn("Shift_A", format="%.2f"),
+    "Shift_B": st.column_config.NumberColumn("Shift_B", format="%.2f"),
+    "Shift_C": st.column_config.NumberColumn("Shift_C", format="%.2f"),
+    "Reliever": st.column_config.NumberColumn("Reliever", format="%.2f"),
+}
+
+READ_ONLY_COLUMNS = [column_name for column_name in MASTER_COLUMNS if column_name not in EDITABLE_COLUMNS_TO_SAVE]
+
 
 
 def render_main_plan(master_df: pd.DataFrame, section_order: list[str]) -> None:
@@ -58,10 +65,9 @@ def render_main_plan(master_df: pd.DataFrame, section_order: list[str]) -> None:
     summary_display_df = append_total_row(summary_df, label_column="Section")
 
     st.markdown('<div class="mini-title">Section Summary</div>', unsafe_allow_html=True)
-    st.dataframe(
+    render_static_table(
         summary_display_df,
-        width="stretch",
-        hide_index=True,
+        key="section_summary_table",
         column_config={
             "Machine_Count": st.column_config.NumberColumn("Machine_Count", format="%.2f"),
             "BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f"),
@@ -76,6 +82,7 @@ def render_main_plan(master_df: pd.DataFrame, section_order: list[str]) -> None:
         render_section_block(section_name=section_name, section_df=section_df)
 
 
+
 def render_filters(master_df: pd.DataFrame) -> tuple[list[str], list[str]]:
     st.markdown('<div class="mini-title">Filters</div>', unsafe_allow_html=True)
 
@@ -85,20 +92,13 @@ def render_filters(master_df: pd.DataFrame) -> tuple[list[str], list[str]]:
     filter_col_1, filter_col_2 = st.columns(2)
 
     with filter_col_1:
-        selected_sections = st.multiselect(
-            "Section",
-            options=section_options,
-            default=[],
-        )
+        selected_sections = st.multiselect("Section", options=section_options, default=[])
 
     with filter_col_2:
-        selected_designations = st.multiselect(
-            "Designation",
-            options=designation_options,
-            default=[],
-        )
+        selected_designations = st.multiselect("Designation", options=designation_options, default=[])
 
     return selected_sections, selected_designations
+
 
 
 def apply_filters(
@@ -122,17 +122,15 @@ def apply_filters(
     return filtered_df
 
 
+
 def render_section_block(section_name: str, section_df: pd.DataFrame) -> None:
     st.markdown(f'<div class="section-shell"><div class="section-name">{section_name}</div>', unsafe_allow_html=True)
 
     compact_df = append_total_row(section_df[COMPACT_COLUMNS].copy(), label_column="Section")
-    st.dataframe(
+    render_static_table(
         compact_df,
-        width="stretch",
-        hide_index=True,
-        column_config={
-            "BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f"),
-        },
+        key=f"compact_{normalize_key_text(section_name)}",
+        column_config={"BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f")},
     )
 
     is_tfo_section = normalize_key_text(section_name) == "TFO"
@@ -140,45 +138,24 @@ def render_section_block(section_name: str, section_df: pd.DataFrame) -> None:
     with st.expander(f"Expand {section_name}", expanded=False):
         editable_df = section_df[EDITOR_COLUMNS + ["__row_key"]].copy()
         editable_df_with_total = append_total_row(editable_df, label_column="Section", total_row_key="__TOTAL__")
-        editable_display_df = editable_df_with_total[EDITOR_COLUMNS].copy()
+        editable_display_df = editable_df_with_total[MASTER_COLUMNS].copy()
 
         if is_tfo_section:
             st.info("TFO rows are controlled from TFO Planning.")
-            st.dataframe(
+            render_static_table(
                 editable_display_df,
-                width="stretch",
-                hide_index=True,
-                column_config={
-                    "Contractors": st.column_config.NumberColumn("Contractors", format="%.2f"),
-                    "Company_Associate": st.column_config.NumberColumn("Company_Associate", format="%.2f"),
-                    "BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f"),
-                    "General_Shift": st.column_config.NumberColumn("General_Shift", format="%.2f"),
-                    "Shift_A": st.column_config.NumberColumn("Shift_A", format="%.2f"),
-                    "Shift_B": st.column_config.NumberColumn("Shift_B", format="%.2f"),
-                    "Shift_C": st.column_config.NumberColumn("Shift_C", format="%.2f"),
-                    "Reliever": st.column_config.NumberColumn("Reliever", format="%.2f"),
-                },
+                key=f"readonly_{normalize_key_text(section_name)}",
+                column_config=_build_column_config(read_only=True),
             )
         else:
             edited_display_df = st.data_editor(
                 editable_display_df,
                 width="stretch",
                 hide_index=True,
-                key=f"editor_{section_name}",
-                column_config={
-                    "Operator_Type": st.column_config.SelectboxColumn("Operator_Type", options=OPERATOR_TYPE_OPTIONS),
-                    "Contractors": st.column_config.NumberColumn("Contractors", format="%.2f"),
-                    "Company_Associate": st.column_config.NumberColumn("Company_Associate", format="%.2f"),
-                    "BE_Final_Manpower": st.column_config.NumberColumn("BE_Final_Manpower", format="%.2f"),
-                    "General_Shift": st.column_config.NumberColumn("General_Shift", format="%.2f"),
-                    "Shift_A": st.column_config.NumberColumn("Shift_A", format="%.2f"),
-                    "Shift_B": st.column_config.NumberColumn("Shift_B", format="%.2f"),
-                    "Shift_C": st.column_config.NumberColumn("Shift_C", format="%.2f"),
-                    "Reliever": st.column_config.NumberColumn("Reliever", format="%.2f"),
-                    "Section": st.column_config.TextColumn("Section", disabled=True),
-                    "Dept_Machine_Name": st.column_config.TextColumn("Dept_Machine_Name", disabled=True),
-                    "Designation": st.column_config.TextColumn("Designation", disabled=True),
-                },
+                key=f"editor_{normalize_key_text(section_name)}",
+                disabled=READ_ONLY_COLUMNS,
+                column_config=_build_column_config(read_only=False),
+                height=min(56 + max(len(editable_display_df), 1) * 35, 560),
             )
             persist_section_edits(
                 original_df=editable_df,
@@ -187,6 +164,24 @@ def render_section_block(section_name: str, section_df: pd.DataFrame) -> None:
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+def _build_column_config(read_only: bool) -> dict[str, object]:
+    column_config: dict[str, object] = {
+        "Location": st.column_config.TextColumn("Location", disabled=True),
+        "Business": st.column_config.TextColumn("Business", disabled=True),
+        "Section": st.column_config.TextColumn("Section", disabled=True),
+        "Dept_Machine_Name": st.column_config.TextColumn("Dept_Machine_Name", disabled=True),
+        "Designation": st.column_config.TextColumn("Designation", disabled=True),
+        "Workload": st.column_config.TextColumn("Workload", disabled=True),
+        "Formulas": st.column_config.TextColumn("Formulas", disabled=True),
+        "Operator_Type": st.column_config.SelectboxColumn("Operator_Type", options=OPERATOR_TYPE_OPTIONS, disabled=read_only),
+        "Remarks": st.column_config.TextColumn("Remarks", disabled=read_only),
+    }
+    column_config.update(NUMERIC_CONFIG)
+    return column_config
+
 
 
 def persist_section_edits(
@@ -201,17 +196,20 @@ def persist_section_edits(
     edited_df = edited_df.loc[edited_df["__row_key"] != "__TOTAL__"].copy()
     edited_df = coerce_editor_dataframe(edited_df)
 
-    compare_original = original_df[EDITOR_COLUMNS + ["__row_key"]].copy()
+    compare_original = original_df[MASTER_COLUMNS + ["__row_key"]].copy()
     compare_original = coerce_editor_dataframe(compare_original)
 
-    if dataframes_match(compare_original, edited_df[EDITOR_COLUMNS + ["__row_key"]]):
+    compare_edited = edited_df[MASTER_COLUMNS + ["__row_key"]].copy()
+    compare_edited = coerce_editor_dataframe(compare_edited)
+
+    if dataframes_match(compare_original, compare_edited):
         return
 
     current_master_df = st.session_state[MASTER_DATA_KEY].copy()
     update_lookup = edited_df.set_index("__row_key")[EDITABLE_COLUMNS_TO_SAVE].to_dict("index")
 
     for row_index, row in current_master_df.iterrows():
-        row_key = row["__row_key"]
+        row_key = clean_text(row["__row_key"])
         if row_key not in update_lookup:
             continue
 

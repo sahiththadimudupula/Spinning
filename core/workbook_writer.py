@@ -5,15 +5,24 @@ from pathlib import Path
 
 import openpyxl
 import pandas as pd
+from openpyxl.styles import Font, PatternFill
 
 from config.constants import (
+    GENERATED_TFO_MANPOWER_MARKER,
+    GENERATED_TFO_MARKER,
+    GENERATED_TFO_RESULT_MARKER,
     MASTER_COLUMNS,
     MASTER_SHEET_NAME,
-    TFO_INPUT_END_ROW,
-    TFO_INPUT_START_ROW,
+    TFO_INPUT_COLUMNS,
+    TFO_MANPOWER_DISPLAY_COLUMNS,
+    TFO_PRODUCTION_DISPLAY_COLUMNS,
     TFO_SHEET_NAME,
 )
 from core.dataframe_utils import clean_text, safe_float
+
+TITLE_FILL = PatternFill("solid", fgColor="DCEBFF")
+HEADER_FILL = PatternFill("solid", fgColor="EAF3FF")
+BOLD_FONT = Font(bold=True)
 
 
 def build_workbook_bytes(
@@ -28,13 +37,10 @@ def build_workbook_bytes(
     tfo_sheet = workbook[TFO_SHEET_NAME]
 
     write_master_sheet(master_sheet=master_sheet, master_df=master_df)
-    write_tfo_production_section(
+    rewrite_tfo_sheet(
         tfo_sheet=tfo_sheet,
         tfo_input_df=tfo_input_df,
         tfo_production_df=tfo_production_df,
-    )
-    write_tfo_manpower_section(
-        tfo_sheet=tfo_sheet,
         tfo_manpower_df=tfo_manpower_df,
     )
 
@@ -42,6 +48,7 @@ def build_workbook_bytes(
     workbook.save(output)
     output.seek(0)
     return output.getvalue()
+
 
 
 def write_state_to_workbook(
@@ -57,19 +64,17 @@ def write_state_to_workbook(
     tfo_sheet = workbook[TFO_SHEET_NAME]
 
     write_master_sheet(master_sheet=master_sheet, master_df=master_df)
-    write_tfo_production_section(
+    rewrite_tfo_sheet(
         tfo_sheet=tfo_sheet,
         tfo_input_df=tfo_input_df,
         tfo_production_df=tfo_production_df,
-    )
-    write_tfo_manpower_section(
-        tfo_sheet=tfo_sheet,
         tfo_manpower_df=tfo_manpower_df,
     )
 
     output_workbook_path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_workbook_path)
     return output_workbook_path
+
 
 
 def write_master_sheet(master_sheet, master_df: pd.DataFrame) -> None:
@@ -85,59 +90,85 @@ def write_master_sheet(master_sheet, master_df: pd.DataFrame) -> None:
             master_sheet.cell(row=excel_row, column=column_index, value=value)
 
 
-def write_tfo_production_section(tfo_sheet, tfo_input_df: pd.DataFrame, tfo_production_df: pd.DataFrame) -> None:
-    input_lookup = tfo_input_df.set_index("__excel_row").to_dict("index")
-    production_lookup = tfo_production_df.set_index("__excel_row").to_dict("index")
 
-    for excel_row in range(TFO_INPUT_START_ROW, TFO_INPUT_END_ROW + 1):
-        input_row = input_lookup.get(excel_row, {})
-        production_row = production_lookup.get(excel_row, {})
-
-        tfo_sheet[f"A{excel_row}"] = clean_text(input_row.get("Count"))
-        tfo_sheet[f"B{excel_row}"] = clean_text(input_row.get("Customer"))
-        tfo_sheet[f"C{excel_row}"] = safe_float(input_row.get("Count2"))
-        tfo_sheet[f"D{excel_row}"] = safe_float(input_row.get("Speed"))
-        tfo_sheet[f"E{excel_row}"] = safe_float(input_row.get("TPI"))
-        tfo_sheet[f"F{excel_row}"] = safe_float(input_row.get("Utilization"))
-        tfo_sheet[f"G{excel_row}"] = safe_float(input_row.get("Efficiency"))
-
-        tfo_sheet[f"H{excel_row}"] = production_row.get("Production per Drum/day Formula")
-        tfo_sheet[f"I{excel_row}"] = safe_float(production_row.get("Production per Drum/day"))
-        tfo_sheet[f"J{excel_row}"] = production_row.get("Production Required / Month Kgs Formula")
-        tfo_sheet[f"K{excel_row}"] = safe_float(production_row.get("Production Required / Month Kgs"))
-        tfo_sheet[f"L{excel_row}"] = safe_float(input_row.get("Production Required / day Kgs"))
-        tfo_sheet[f"M{excel_row}"] = production_row.get("No. of Drums Required Formula")
-        tfo_sheet[f"N{excel_row}"] = safe_float(production_row.get("No. of Drums Required"))
-        tfo_sheet[f"O{excel_row}"] = production_row.get("TFO Required / Shift Formula")
-        tfo_sheet[f"P{excel_row}"] = safe_float(production_row.get("TFO Required / Shift"))
-        tfo_sheet[f"Q{excel_row}"] = safe_float(input_row.get("mpm"))
-        tfo_sheet[f"R{excel_row}"] = safe_float(input_row.get("Eff"))
-        tfo_sheet[f"S{excel_row}"] = production_row.get("kgs/drum/day Formula")
-        tfo_sheet[f"T{excel_row}"] = safe_float(production_row.get("kgs/drum/day"))
-        tfo_sheet[f"U{excel_row}"] = production_row.get("No. of Drums Formula")
-        tfo_sheet[f"V{excel_row}"] = safe_float(production_row.get("No. of Drums (A/W) Reqd."))
-        tfo_sheet[f"W{excel_row}"] = production_row.get("Assembly Winding Reqd./ Shift Formula")
-        tfo_sheet[f"X{excel_row}"] = safe_float(production_row.get("Assembly Winding Reqd./ Shift"))
+def _clear_sheet(sheet) -> None:
+    if sheet.max_row > 0:
+        sheet.delete_rows(1, sheet.max_row)
 
 
-def write_tfo_manpower_section(tfo_sheet, tfo_manpower_df: pd.DataFrame) -> None:
-    for row_offset, (_, row) in enumerate(tfo_manpower_df.reset_index(drop=True).iterrows()):
-        excel_row = 23 + row_offset
 
-        tfo_sheet[f"A{excel_row}"] = clean_text(row["Location"])
-        tfo_sheet[f"B{excel_row}"] = clean_text(row["Business"])
-        tfo_sheet[f"C{excel_row}"] = clean_text(row["Section"])
-        tfo_sheet[f"D{excel_row}"] = safe_float(row["Sr_No"])
-        tfo_sheet[f"E{excel_row}"] = clean_text(row["Dept_Machine_Name"])
-        tfo_sheet[f"F{excel_row}"] = clean_text(row["Designation"])
-        tfo_sheet[f"G{excel_row}"] = None
-        tfo_sheet[f"H{excel_row}"] = None
-        tfo_sheet[f"I{excel_row}"] = clean_text(row["Formulas"])
-        tfo_sheet[f"J{excel_row}"] = safe_float(row["BE_Scientific_Manpower"])
-        tfo_sheet[f"K{excel_row}"] = safe_float(row["BE_Final_Manpower"])
-        tfo_sheet[f"L{excel_row}"] = safe_float(row["General_Shift"])
-        tfo_sheet[f"M{excel_row}"] = safe_float(row["Shift_A"])
-        tfo_sheet[f"N{excel_row}"] = safe_float(row["Shift_B"])
-        tfo_sheet[f"O{excel_row}"] = safe_float(row["Shift_C"])
-        tfo_sheet[f"P{excel_row}"] = safe_float(row["Reliever"])
-        tfo_sheet[f"Q{excel_row}"] = clean_text(row["Remarks"])
+def _write_section_title(sheet, row_number: int, title_text: str, number_of_columns: int) -> None:
+    sheet.cell(row=row_number, column=1, value=title_text)
+    sheet.cell(row=row_number, column=1).font = BOLD_FONT
+    sheet.cell(row=row_number, column=1).fill = TITLE_FILL
+    for column_index in range(2, number_of_columns + 1):
+        sheet.cell(row=row_number, column=column_index).fill = TITLE_FILL
+
+
+
+def _write_table(sheet, start_row: int, dataframe: pd.DataFrame) -> int:
+    for column_index, column_name in enumerate(dataframe.columns, start=1):
+        cell = sheet.cell(row=start_row, column=column_index, value=column_name)
+        cell.font = BOLD_FONT
+        cell.fill = HEADER_FILL
+
+    current_row = start_row + 1
+    for _, row in dataframe.iterrows():
+        for column_index, column_name in enumerate(dataframe.columns, start=1):
+            value = row[column_name]
+            if pd.isna(value):
+                value = None
+            sheet.cell(row=current_row, column=column_index, value=value)
+        current_row += 1
+
+    return current_row
+
+
+
+def _autosize_columns(sheet, max_column: int) -> None:
+    for column_index in range(1, max_column + 1):
+        max_length = 12
+        column_letter = openpyxl.utils.get_column_letter(column_index)
+        for cell in sheet[column_letter]:
+            text_value = clean_text(cell.value)
+            if text_value:
+                max_length = max(max_length, len(text_value) + 2)
+        sheet.column_dimensions[column_letter].width = min(max_length, 34)
+
+
+
+def rewrite_tfo_sheet(
+    tfo_sheet,
+    tfo_input_df: pd.DataFrame,
+    tfo_production_df: pd.DataFrame,
+    tfo_manpower_df: pd.DataFrame,
+) -> None:
+    _clear_sheet(tfo_sheet)
+
+    input_df = tfo_input_df[TFO_INPUT_COLUMNS].copy()
+
+    production_formula_columns = [
+        "Production Required / Month Kgs Formula",
+        "Production per Drum/day Formula",
+        "No. of Drums Required Formula",
+        "TFO Reqd./ Shift Formula",
+        "kgs/drum/day Formula",
+        "No. of Drums (A/W) Reqd. Formula",
+        "Assembly Winding Reqd./ Shift Formula",
+    ]
+    production_df = tfo_production_df[TFO_PRODUCTION_DISPLAY_COLUMNS + production_formula_columns].copy()
+
+    manpower_df = tfo_manpower_df[TFO_MANPOWER_DISPLAY_COLUMNS + ["Formulas"]].copy()
+
+    _write_section_title(tfo_sheet, 1, GENERATED_TFO_MARKER, len(input_df.columns))
+    next_row = _write_table(tfo_sheet, 2, input_df)
+
+    production_title_row = next_row + 1
+    _write_section_title(tfo_sheet, production_title_row, GENERATED_TFO_RESULT_MARKER, len(production_df.columns))
+    next_row = _write_table(tfo_sheet, production_title_row + 1, production_df)
+
+    manpower_title_row = next_row + 1
+    _write_section_title(tfo_sheet, manpower_title_row, GENERATED_TFO_MANPOWER_MARKER, len(manpower_df.columns))
+    _write_table(tfo_sheet, manpower_title_row + 1, manpower_df)
+
+    _autosize_columns(tfo_sheet, max(len(input_df.columns), len(production_df.columns), len(manpower_df.columns)))

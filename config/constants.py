@@ -18,6 +18,9 @@ DEFAULT_OUTPUT_WORKBOOK_PATH = OUTPUT_WORKBOOK_CANDIDATES[0]
 
 MASTER_SHEET_NAME = "Spinning"
 TFO_SHEET_NAME = "TFO"
+GENERATED_TFO_MARKER = "TFO Production Planning"
+GENERATED_TFO_RESULT_MARKER = "TFO Production Result"
+GENERATED_TFO_MANPOWER_MARKER = "TFO Manpower Requirement"
 
 MASTER_COLUMNS = [
     "Location",
@@ -55,21 +58,7 @@ SECTION_SUMMARY_COLUMNS = [
     "BE_Final_Manpower",
 ]
 
-EDITOR_COLUMNS = [
-    "Section",
-    "Dept_Machine_Name",
-    "Designation",
-    "Operator_Type",
-    "Contractors",
-    "Company_Associate",
-    "BE_Final_Manpower",
-    "General_Shift",
-    "Shift_A",
-    "Shift_B",
-    "Shift_C",
-    "Reliever",
-    "Remarks",
-]
+EDITOR_COLUMNS = MASTER_COLUMNS.copy()
 
 EDITABLE_NUMERIC_COLUMNS = [
     "Contractors",
@@ -81,6 +70,13 @@ EDITABLE_NUMERIC_COLUMNS = [
     "Shift_C",
     "Reliever",
 ]
+
+EDITABLE_TEXT_COLUMNS = [
+    "Operator_Type",
+    "Remarks",
+]
+
+EDITABLE_COLUMNS = EDITABLE_TEXT_COLUMNS + EDITABLE_NUMERIC_COLUMNS
 
 TEXT_COLUMNS = [
     "Location",
@@ -117,8 +113,28 @@ TFO_INPUT_COLUMNS = [
     "Utilization",
     "Efficiency",
     "Production Required / day Kgs",
+    "TFO Divisor",
     "mpm",
     "Eff",
+    "Machine Divisor",
+]
+
+TFO_UPLOAD_REQUIRED_COLUMNS = [
+    "Count",
+    "Customer",
+    "Count2",
+    "Speed",
+    "TPI",
+    "Utilization",
+    "Efficiency",
+    "Production Required / day Kgs",
+    "mpm",
+    "Eff",
+]
+
+TFO_UPLOAD_OPTIONAL_COLUMNS = [
+    "TFO Divisor",
+    "Machine Divisor",
 ]
 
 TFO_PRODUCTION_DISPLAY_COLUMNS = [
@@ -162,13 +178,13 @@ DEFAULT_MACHINE_DIVISOR = 72.0
 
 TFO_INPUT_START_ROW = 2
 TFO_INPUT_END_ROW = 19
-TFO_OUTPUT_START_ROW = 23
 
 SUCCESS_MESSAGE_KEY = "freeze_success_message"
 WORKBOOK_PATH_KEY = "workbook_path"
 MASTER_DATA_KEY = "master_df"
 MASTER_SOURCE_KEY = "master_source_df"
 TFO_INPUT_DATA_KEY = "tfo_input_df"
-TFO_PRODUCTION_DATA_KEY = "tfo_production_df"
 TFO_MANPOWER_DATA_KEY = "tfo_manpower_df"
+TFO_PRODUCTION_DATA_KEY = "tfo_production_df"
 SECTION_ORDER_KEY = "section_order"
+TFO_UPLOAD_HASH_KEY = "tfo_upload_hash"

@@ -3,7 +3,6 @@ from __future__ import annotations
 import streamlit as st
 
 
-
 def apply_app_styles() -> None:
     st.markdown(
         """
@@ -156,6 +155,7 @@ def apply_app_styles() -> None:
                 border-radius: 14px;
                 margin-bottom: 0.9rem;
                 background: #ffffff;
+                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
             }
 
             table.formula-table {
@@ -180,15 +180,76 @@ def apply_app_styles() -> None:
                 white-space: nowrap;
                 color: #0f172a;
                 background: #ffffff;
+                vertical-align: middle;
             }
 
-            table.formula-table tbody tr:hover {
+            table.formula-table tbody tr:hover td {
                 background: #f8fafc;
             }
 
             table.formula-table tbody tr:last-child td {
                 background: #f8fafc;
                 font-weight: 700;
+            }
+
+            .formula-cell {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .formula-value {
+                color: #0f172a;
+            }
+
+            .formula-tooltip-wrapper {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                cursor: pointer;
+            }
+
+            .formula-icon {
+                color: #2563eb;
+                font-size: 0.82rem;
+                font-weight: 700;
+                line-height: 1;
+                border: 1px solid #2563eb;
+                border-radius: 999px;
+                width: 18px;
+                height: 18px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: #ffffff;
+                box-sizing: border-box;
+            }
+
+            .formula-bubble {
+                visibility: hidden;
+                opacity: 0;
+                position: absolute;
+                left: 50%;
+                top: calc(100% + 8px);
+                transform: translateX(-50%);
+                z-index: 999;
+                min-width: 240px;
+                max-width: 380px;
+                background: #ffffff;
+                color: #0f172a;
+                padding: 9px 11px;
+                border-radius: 10px;
+                font-size: 0.78rem;
+                line-height: 1.4;
+                white-space: normal;
+                border: 1px solid #cbd5e1;
+                box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+                pointer-events: none;
+            }
+
+            .formula-tooltip-wrapper:hover .formula-bubble {
+                visibility: visible;
+                opacity: 1;
             }
 
             div[data-testid="stDataFrame"],
@@ -200,20 +261,49 @@ def apply_app_styles() -> None:
                 box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
             }
 
-            div[data-testid="stDataFrame"] * {
+            div[data-testid="stDataFrame"] [role="gridcell"],
+            div[data-testid="stDataEditor"] [role="gridcell"],
+            div[data-testid="stDataFrame"] [role="columnheader"],
+            div[data-testid="stDataEditor"] [role="columnheader"],
+            div[data-testid="stDataEditor"] input,
+            div[data-testid="stDataEditor"] textarea {
+                color: #0f172a !important;
+                -webkit-text-fill-color: #0f172a !important;
+                background: #ffffff !important;
+            }
+
+            div[data-testid="stDataFrame"] canvas,
+            div[data-testid="stDataEditor"] canvas {
+                background: #ffffff !important;
+            }
+
+            div[data-testid="stDataEditor"] button,
+            div[data-testid="stDataEditor"] svg,
+            div[data-testid="stDataFrame"] button,
+            div[data-testid="stDataFrame"] svg {
+                color: #0f172a !important;
+                fill: #0f172a !important;
+            }
+
+            div[data-baseweb="select"] > div,
+            .stMultiSelect [data-baseweb="select"] > div,
+            .stSelectbox [data-baseweb="select"] > div {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+
+            div[data-baseweb="select"] * {
                 color: #0f172a !important;
             }
 
-            div[data-testid="stDataEditor"] * {
-                color: #000000 !important;
+            ul[role="listbox"] {
+                background: #ffffff !important;
+                color: #0f172a !important;
             }
 
-            div[data-testid="stDataEditor"] input,
-            div[data-testid="stDataEditor"] textarea,
-            div[data-testid="stDataEditor"] [role="gridcell"],
-            div[data-testid="stDataEditor"] [data-testid="stWidgetLabel"] {
-                color: #000000 !important;
-                -webkit-text-fill-color: #000000 !important;
+            ul[role="listbox"] li {
+                color: #0f172a !important;
                 background: #ffffff !important;
             }
 

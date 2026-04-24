@@ -5,7 +5,7 @@ import streamlit as st
 
 from config.constants import MASTER_COLUMNS
 from core.dataframe_utils import append_total_row
-from ui.components import render_metric_cards
+from ui.components import render_metric_cards, render_static_table
 
 
 
@@ -32,10 +32,9 @@ def render_final_master_tab(master_df: pd.DataFrame, workbook_bytes: bytes) -> N
         width="stretch",
     )
 
-    st.dataframe(
+    render_static_table(
         display_df,
-        width="stretch",
-        hide_index=True,
+        key="final_master_table",
         column_config={
             "Machine_Count": st.column_config.NumberColumn("Machine_Count", format="%.2f"),
             "BE_Scientific_Manpower": st.column_config.NumberColumn("BE_Scientific_Manpower", format="%.2f"),

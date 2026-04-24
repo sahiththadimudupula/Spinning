@@ -34,6 +34,24 @@ def render_metric_cards(cards: list[tuple[str, object, str]]) -> None:
 
 
 
+
+def render_static_table(
+    dataframe: pd.DataFrame,
+    key: str,
+    column_config: dict[str, object] | None = None,
+) -> None:
+    row_count = max(len(dataframe), 1)
+    height = min(56 + row_count * 35, 520)
+    st.dataframe(
+        dataframe,
+        key=key,
+        width="stretch",
+        hide_index=True,
+        height=height,
+        column_config=column_config or {},
+    )
+
+
 def render_formula_hover_table(
     dataframe: pd.DataFrame,
     visible_columns: list[str],
@@ -49,22 +67,34 @@ def render_formula_hover_table(
 
     for _, row in dataframe.iterrows():
         html_parts.append("<tr>")
+        is_total_row = str(row.get(visible_columns[0], "")).strip().upper() == "TOTAL"
+
         for column_name in visible_columns:
             value = row[column_name]
-            tooltip_text = ""
-
             formula_column = formula_columns.get(column_name)
-            if formula_column:
-                tooltip_text = str(row.get(formula_column, "") or "")
+            tooltip_text = "" if is_total_row else str(row.get(formula_column, "") or "").strip()
 
             numeric_value = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
             if pd.notna(numeric_value):
-                display_value = format_number(numeric_value)
+                display_value = html.escape(format_number(numeric_value))
             else:
                 display_value = html.escape(str("" if pd.isna(value) else value))
 
-            title_attribute = f' title="{html.escape(tooltip_text)}"' if tooltip_text else ""
-            html_parts.append(f"<td{title_attribute}>{display_value}</td>")
+            if tooltip_text:
+                safe_tooltip = html.escape(tooltip_text)
+                tooltip_html = (
+                    '<span class="formula-cell">'
+                    f'<span class="formula-value">{display_value}</span>'
+                    '<span class="formula-tooltip-wrapper">'
+                    '<span class="formula-icon">ⓘ</span>'
+                    f'<span class="formula-bubble">{safe_tooltip}</span>'
+                    '</span>'
+                    '</span>'
+                )
+                html_parts.append(f"<td>{tooltip_html}</td>")
+            else:
+                html_parts.append(f"<td>{display_value}</td>")
+
         html_parts.append("</tr>")
 
     html_parts.append("</tbody></table></div>")

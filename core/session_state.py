@@ -15,6 +15,7 @@ from config.constants import (
     TFO_INPUT_DATA_KEY,
     TFO_MANPOWER_DATA_KEY,
     TFO_PRODUCTION_DATA_KEY,
+    TFO_UPLOAD_HASH_KEY,
     WORKBOOK_PATH_KEY,
 )
 from core.workbook_loader import load_master_dataframe, load_tfo_input_dataframe, resolve_workbook_path
@@ -29,7 +30,9 @@ STATEFUL_KEYS = [
     TFO_MANPOWER_DATA_KEY,
     SECTION_ORDER_KEY,
     SUCCESS_MESSAGE_KEY,
+    TFO_UPLOAD_HASH_KEY,
 ]
+
 
 
 def initialize_session_state(force_reload: bool = False) -> None:
@@ -51,6 +54,8 @@ def initialize_session_state(force_reload: bool = False) -> None:
     st.session_state[TFO_MANPOWER_DATA_KEY] = tfo_manpower_df
     st.session_state[SECTION_ORDER_KEY] = section_order
     st.session_state[SUCCESS_MESSAGE_KEY] = ""
+    st.session_state[TFO_UPLOAD_HASH_KEY] = ""
+
 
 
 def clear_workbook_session_state() -> None:
